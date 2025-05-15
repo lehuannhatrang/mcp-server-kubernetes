@@ -187,7 +187,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       )
     : allTools;
 
-  return { tools };
+  // Apply cluster name prefix to all tool names
+  const prefixedTools = tools.map(tool => ({
+    ...tool,
+    name: `${serverConfig.clusterName}-${tool.name}`
+  }));
+
+  return { tools: prefixedTools };
 });
 
 server.setRequestHandler(
@@ -197,7 +203,13 @@ server.setRequestHandler(
     method: string;
   }) => {
     try {
-      const { name, arguments: input = {} } = request.params;
+      let { name, arguments: input = {} } = request.params;
+      
+      // Extract the original tool name by removing the cluster prefix
+      const prefix = `${serverConfig.clusterName}-`;
+      if (name.startsWith(prefix)) {
+        name = name.substring(prefix.length);
+      }
 
       switch (name) {
         case "cleanup": {
